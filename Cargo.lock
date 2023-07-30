@@ -1070,12 +1070,11 @@ dependencies = [
  "flate2",
  "hyper",
  "hyper-rustls",
+ "serde",
  "serde_json",
- "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -1137,6 +1136,20 @@ name = "serde"
 version = "1.0.178"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60363bdd39a7be0266a520dab25fdc9241d2f987b08a01e01f0ec6d06a981348"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.178"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f28482318d6641454cb273da158647922d1be6b5a2fcc6165cd89ebdd7ed576b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.27",
+]
 
 [[package]]
 name = "serde_json"
@@ -1464,12 +1477,6 @@ dependencies = [
  "idna",
  "percent-encoding",
 ]
-
-[[package]]
-name = "uuid"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
 
 [[package]]
 name = "valuable"

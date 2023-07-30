@@ -1,5 +1,6 @@
 use std::{sync::{Arc, OnceLock}, env};
 
+use serde::Serialize;
 use serde_json::Value;
 use anyhow::{Result, anyhow};
 
@@ -14,7 +15,8 @@ pub static ARTICLE_DATABASE_ID: OnceLock<Arc<str>> = OnceLock::new();
 pub static SPONSOR_DATABASE_ID: OnceLock<Arc<str>> = OnceLock::new();
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub enum NotionDataType {
   Member, Group, Club, Event, Article, Sponsor
 }
@@ -22,9 +24,9 @@ pub enum NotionDataType {
 impl NotionDataType {
   pub fn iterator() -> std::array::IntoIter<NotionDataType, 6> {
       static DIRECTIONS: [NotionDataType; 6] = [
-        NotionDataType::Member,
-        NotionDataType::Group,
         NotionDataType::Club,
+        NotionDataType::Group,
+        NotionDataType::Member,
         NotionDataType::Event,
         NotionDataType::Article,
         NotionDataType::Sponsor
@@ -81,21 +83,22 @@ impl NotionDataType {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(untagged, rename_all(serialize = "snake_case"))]
 pub enum NotionData {
   Member(Member),
   Group(Group),
   Club(Club),
   Event(Event),
   Article(Article),
-  Sponsor(Sponsor),
-  Null
+  Sponsor(Sponsor)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct EventPeriod {
-  start: Arc<str>,
-  end: Arc<str>
+  start: String,
+  end: String
 }
 
 impl EventPeriod {
@@ -126,16 +129,17 @@ impl EventPeriod {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct Member {
-  pub id: Arc<str>,
-  pub avatar: Arc<str>,
-  pub name: Arc<str>,
-  pub nickname: Arc<str>,
+  pub id: String,
+  pub avatar: String,
+  pub name: String,
+  pub nickname: String,
   pub groups: Option<Vec<Group>>,
-  pub description: Arc<str>,
-  pub club: Club,
-  pub club_positions: Vec<Arc<str>>
+  pub description: String,
+  pub club: Option<Club>,
+  pub club_positions: Vec<String>
 }
 
 impl Member {
@@ -147,7 +151,7 @@ impl Member {
       nickname: "N/A".into(),
       groups: None,
       description: "N/A".into(),
-      club: Club::default(),
+      club: None,
       club_positions: vec![]
     }
   }
@@ -156,18 +160,24 @@ impl Member {
     let properties: &Value = &json_data["properties"];
 
     let mut groups: Vec<Group> = Vec::new();
-    for json_data in properties["groups"]["relation"].as_array().ok_or(
-      anyhow!("Get `position` failed.")
+    for groups_data in properties["groups"]["relation"].as_array().ok_or(
+      anyhow!("Get `groups` failed.")
     )?.into_iter() {
       groups.push(
         match CacheStorage::get().request(
-          json_data["id"].as_str().unwrap_or(""),
-          NotionDataType::Group
+          groups_data["id"].as_str().unwrap_or(""),
+          &NotionDataType::Group
         ).await {
-          NotionData::Group(data) => data,
-          _ => Group::default()
+          Some(data) => match data {
+            NotionData::Group(mut data) => {
+              data.members = None;
+              data
+            },
+            _ => Group::default()
+          },
+          None => Group::default()
         }
-      )
+      );
     }
 
     Ok(
@@ -205,11 +215,14 @@ impl Member {
           .into(),
         club: match CacheStorage::get().request(
           properties["club"]["relation"][0]["id"].as_str().unwrap_or(""),
-          NotionDataType::Club
-        ).await {
-          NotionData::Club(data) => data,
-          _ => Club::default()
-        },
+            &NotionDataType::Club
+          ).await {
+            Some(data) => match data {
+              NotionData::Club(data) => Some(data),
+              _ => None
+            },
+            None => None
+          },
         club_positions: properties["club_positions"]["multi_select"]
           .as_array()
           .ok_or(
@@ -227,11 +240,12 @@ impl Member {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct Group {
-  pub id: Arc<str>,
-  pub name: Arc<str>,
-  pub description: Arc<str>,
+  pub id: String,
+  pub name: String,
+  pub description: String,
   pub members: Option<Vec<Member>>
 }
 
@@ -249,18 +263,24 @@ impl Group {
     let properties: &Value = &json_data["properties"];
 
     let mut members: Vec<Member> = Vec::new();
-    for json_data in properties["members"]["relation"].as_array().ok_or(
+    for members_data in properties["members"]["relation"].as_array().ok_or(
       anyhow!("Get `members` failed.")
     )?.into_iter() {
       members.push(
         match CacheStorage::get().request(
-          json_data["id"].as_str().unwrap_or(""),
-          NotionDataType::Member
+          members_data["id"].as_str().unwrap_or(""),
+          &NotionDataType::Member
         ).await {
-          NotionData::Member(data) => data,
-          _ => Member::default()
+          Some(data) => match data {
+            NotionData::Member(mut data) => {
+              data.groups = None;
+              data
+            },
+            _ => Member::default()
+          },
+          None => Member::default()
         }
-      )
+      );
     }
 
     Ok(
@@ -283,20 +303,21 @@ impl Group {
             anyhow!("Get `description` failed.")
           )?
           .into(),
-        members: Some(members),
+        members: Some(members)
       }
     )
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct Club {
-  pub id: Arc<str>,
-  pub name: Arc<str>,
-  pub description: Arc<str>,
-  pub school: Arc<str>,
-  pub instagram_id: Arc<str>,
-  pub icon: Arc<str>
+  pub id: String,
+  pub name: String,
+  pub description: String,
+  pub school: String,
+  pub instagram_id: String,
+  pub icon: String
 }
 
 impl Club {
@@ -357,13 +378,14 @@ impl Club {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct Event {
-  pub id: Arc<str>,
+  pub id: String,
   pub date: EventPeriod,
-  pub name: Arc<str>,
-  pub description: Arc<str>,
-  pub thumbnail: Arc<str>,
+  pub name: String,
+  pub description: String,
+  pub thumbnail: String,
   pub principal: Vec<Member>
 }
 
@@ -383,16 +405,19 @@ impl Event {
     let properties: &Value = &json_data["properties"];
 
     let mut principal: Vec<Member> = Vec::new();
-    for json_data in properties["principal"]["relation"].as_array().ok_or(
+    for principal_data in properties["principal"]["relation"].as_array().ok_or(
       anyhow!("Get `principal` failed.")
     )?.into_iter() {
       principal.push(
         match CacheStorage::get().request(
-          json_data["id"].as_str().unwrap_or(""),
-          NotionDataType::Member
+          principal_data["id"].as_str().unwrap_or(""),
+          &NotionDataType::Member
         ).await {
-          NotionData::Member(data) => data,
-          _ => Member::default()
+          Some(data) => match data {
+            NotionData::Member(data) => data,
+            _ => Member::default()
+          },
+          None => Member::default()
         }
       )
     }
@@ -432,15 +457,16 @@ impl Event {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct Article {
-  pub id: Arc<str>,
-  pub title: Arc<str>,
-  pub content: Arc<str>,
-  pub description: Arc<str>,
-  pub tags: Vec<Arc<str>>,
-  pub created_at: Arc<str>,
-  pub updated_at: Arc<str>
+  pub id: String,
+  pub title: String,
+  pub content: String,
+  pub description: String,
+  pub tags: Vec<String>,
+  pub created_at: String,
+  pub updated_at: String
 }
 
 impl Article {
@@ -509,13 +535,14 @@ impl Article {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all(serialize = "snake_case"))]
 pub struct Sponsor {
-  pub id: Arc<str>,
-  pub name: Arc<str>,
-  pub icon: Arc<str>,
-  pub url: Arc<str>,
-  pub description: Arc<str>
+  pub id: String,
+  pub name: String,
+  pub icon: String,
+  pub url: String,
+  pub description: String
 }
 
 impl Sponsor {

@@ -3,6 +3,14 @@ name = "scaict_website_api"
 version = "0.1.0"
 edition = "2021"
 
+
+[profile.release]
+strip = "symbols"
+lto = "fat"
+codegen-units = 1
+opt-level = "s"
+
+
 [dependencies.actix-web]
 version = "4.3.1"
 
@@ -18,9 +26,6 @@ version = "0.14.27"
 [dependencies.hyper-rustls]
 version = "0.24.1"
 
-[dependencies.time]
-version = "0.3.23"
-
 [dependencies.tokio]
 version = "1.29.1"
 features = ["full"]
@@ -31,8 +36,9 @@ version = "0.1.37"
 [dependencies.tracing-subscriber]
 version = "0.3.17"
 
-[dependencies.uuid]
-version = "1.4.1"
+[dependencies.serde]
+version = "1.0.177"
+features = ["derive"]
 
 [dependencies.serde_json]
 version = "1.0.104"

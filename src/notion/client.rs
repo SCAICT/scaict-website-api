@@ -1,21 +1,45 @@
 use std::{sync::{OnceLock, Arc}, env, io::Read};
 
 use flate2::read::GzDecoder;
-use hyper::{Client, client::HttpConnector, Body, Request, http::request::Builder, header, Response, body};
-use hyper_rustls::{HttpsConnector as rustls_HttpsConnector, HttpsConnectorBuilder};
+use hyper::{
+  Client,
+  client::HttpConnector,
+  Body,
+  Request,
+  http::request::Builder,
+  header,
+  Response,
+  body
+};
+use hyper_rustls::{
+  HttpsConnector as rustls_HttpsConnector,
+  HttpsConnectorBuilder
+};
 use serde_json::Value;
 use anyhow::{Result, anyhow};
 use tracing::log::debug;
 
-use super::types::{Member, Group, Club, NotionDataType, NotionData, Event, Article, Sponsor};
+use super::types::{
+  Member,
+  Group,
+  Club,
+  NotionDataType,
+  NotionData,
+  Event,
+  Article,
+  Sponsor
+};
+
 
 pub type HttpsConnector = rustls_HttpsConnector<HttpConnector>;
+
 
 pub static HTTP_CLIENT: OnceLock<Client<HttpsConnector, Body>> = OnceLock::new();
 
 static NOTION_VERSION: &str = "2022-06-28";
 
 pub static INTEGRATION_SECRET: OnceLock<Arc<str>> = OnceLock::new();
+
 
 fn get_http_client() -> Client<HttpsConnector, Body> {
   HTTP_CLIENT.get_or_init(
@@ -30,7 +54,6 @@ fn get_http_client() -> Client<HttpsConnector, Body> {
     }
   ).clone()
 }
-
 
 fn build_request(
   url: &str
@@ -107,7 +130,7 @@ async fn request(
 }
 
 pub async fn fetch_data(
-  data_type: NotionDataType,
+  data_type: &NotionDataType,
 ) -> Result<Vec<NotionData>> {
   let url: Arc<str> = format!(
     "https://api.notion.com/v1/databases/{database_id}/query",
