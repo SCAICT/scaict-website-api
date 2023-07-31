@@ -52,6 +52,3 @@ version = "1.0.104"
 
 [dependencies.flate2]
 version = "1.0.26"
-
-[dependencies.futures-util]
-version = "0.3.28"

@@ -1100,7 +1100,6 @@ dependencies = [
  "anyhow",
  "dotenv",
  "flate2",
- "futures-util",
  "hyper",
  "hyper-rustls",
  "rustls 0.20.8",
