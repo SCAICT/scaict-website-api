@@ -1,4 +1,9 @@
-use std::{sync::{OnceLock, Arc}, env, io::Read};
+use std::{
+  sync::{OnceLock, Arc},
+  env,
+  io::Read,
+  time::Duration
+};
 
 use flate2::read::GzDecoder;
 use hyper::{
@@ -17,9 +22,10 @@ use hyper_rustls::{
 };
 use serde_json::Value;
 use anyhow::{Result, anyhow};
+use tokio::time::sleep;
 use tracing::log::debug;
 
-use super::types::{
+use super::{types::{
   Member,
   Group,
   Club,
@@ -28,17 +34,15 @@ use super::types::{
   Event,
   Article,
   Sponsor
-};
+}, cache::CacheStorage};
 
 
-pub type HttpsConnector = rustls_HttpsConnector<HttpConnector>;
+type HttpsConnector = rustls_HttpsConnector<HttpConnector>;
 
 
-pub static HTTP_CLIENT: OnceLock<Client<HttpsConnector, Body>> = OnceLock::new();
-
+static HTTP_CLIENT: OnceLock<Client<HttpsConnector, Body>> = OnceLock::new();
+static INTEGRATION_SECRET: OnceLock<Arc<str>> = OnceLock::new();
 static NOTION_VERSION: &str = "2022-06-28";
-
-pub static INTEGRATION_SECRET: OnceLock<Arc<str>> = OnceLock::new();
 
 
 fn get_http_client() -> Client<HttpsConnector, Body> {
@@ -108,10 +112,7 @@ fn build_request(
   Ok(request)
 }
 
-async fn request(
-  url: &str,
-  // mut params: BTreeMap<&str, Arc<str>>
-) -> Result<Value> {
+async fn request(url: &str) -> Result<Value> {
   debug!("Sending request: {:?}", url);
 
   let response: Response<Body> = get_http_client().request(
@@ -127,6 +128,16 @@ async fn request(
   debug!("Decoded body: {:?}", body);
   
   Ok(serde_json::from_str(&body)?)
+}
+
+pub async fn update_all() {
+  for data_type in NotionDataType::iterator() {
+    CacheStorage::get().update(
+      &data_type,
+      fetch_data(&data_type).await.unwrap()
+    ).await;
+    sleep(Duration::from_millis(500)).await;
+  }
 }
 
 pub async fn fetch_data(

@@ -1,12 +1,25 @@
-use actix_web::{get, HttpResponse, http::header::{ContentType, self}, web, HttpRequest};
+use actix_web::{
+  get,
+  HttpResponse,
+  http::header::{ContentType, self},
+  web,
+  HttpRequest
+};
 use tracing::log::debug;
 
-use crate::notion::{types::NotionDataType, cache::CacheStorage, client::fetch_data};
+use crate::notion::{
+  types::NotionDataType,
+  cache::CacheStorage,
+  client::fetch_data
+};
+
+
+static API_VERSION: &str = "1.0.0";
 
 
 async fn handle_no_cache(req: &HttpRequest, data_type: &NotionDataType) {
-  if let Some(cache_control_header) = req.headers().get(header::CACHE_CONTROL) {
-    if cache_control_header.to_str().unwrap_or("") == "no-cache" {
+  if let Some(cache_control) = req.headers().get(header::CACHE_CONTROL) {
+    if cache_control.to_str().unwrap_or("") == "no-cache" {
       debug!("Receive `no-cache`, cleaning cache...");
       CacheStorage::get().update(
         &data_type,
@@ -14,6 +27,18 @@ async fn handle_no_cache(req: &HttpRequest, data_type: &NotionDataType) {
       ).await;
     }
   }
+}
+
+#[get("/version")]
+async fn get_version() -> HttpResponse {
+  HttpResponse::Ok()
+    .content_type(ContentType::json())
+    .json(
+      format!(
+        r#"{{"version": "{api_version}"}}"#,
+        api_version = API_VERSION
+      )
+    )
 }
 
 #[get("/members")]

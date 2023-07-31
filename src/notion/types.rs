@@ -94,7 +94,7 @@ pub enum NotionData {
   Sponsor(Sponsor)
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct EventPeriod {
   start: String,
@@ -102,13 +102,6 @@ pub struct EventPeriod {
 }
 
 impl EventPeriod {
-  pub fn default() -> EventPeriod {
-    EventPeriod {
-      start: "1970-01-01T00:00:00.000+00:00".into(),
-      end: "1970-01-01T00:00:00.000+00:00".into(),
-    }
-  }
-
   pub fn from_json(json_data: &Value) -> Result<EventPeriod> {
     Ok(
       EventPeriod {
@@ -129,7 +122,7 @@ impl EventPeriod {
   }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct Member {
   pub id: String,
@@ -143,19 +136,6 @@ pub struct Member {
 }
 
 impl Member {
-  pub fn default() -> Member {
-    Member {
-      id: "N/A".into(),
-      avatar: "N/A".into(),
-      name: "N/A".into(),
-      nickname: "N/A".into(),
-      groups: None,
-      description: "N/A".into(),
-      club: None,
-      club_positions: vec![]
-    }
-  }
-
   pub async fn from_json(json_data: &Value) -> Result<Member> {
     let properties: &Value = &json_data["properties"];
 
@@ -230,7 +210,7 @@ impl Member {
           )?
           .into_iter()
           .map(
-            |d| {
+            |d: &Value| {
               d["name"].as_str().unwrap_or("N/A").into()
             }
           )
@@ -240,25 +220,16 @@ impl Member {
   }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct Group {
   pub id: String,
-  pub name: String,
-  pub description: String,
-  pub members: Option<Vec<Member>>
+  name: String,
+  description: String,
+  members: Option<Vec<Member>>
 }
 
 impl Group {
-  pub fn default() -> Group {
-    Group {
-      id: "N/A".into(),
-      name: "N/A".into(),
-      description: "N/A".into(),
-      members: None
-    }
-  }
-
   pub async fn from_json(json_data: &Value) -> Result<Group> {
     let properties: &Value = &json_data["properties"];
 
@@ -309,29 +280,18 @@ impl Group {
   }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct Club {
   pub id: String,
-  pub name: String,
-  pub description: String,
-  pub school: String,
-  pub instagram_id: String,
-  pub icon: String
+  name: String,
+  description: String,
+  school: String,
+  instagram_id: String,
+  icon: String
 }
 
 impl Club {
-  pub fn default() -> Club {
-    Club {
-      id: "N/A".into(),
-      name: "N/A".into(),
-      description: "N/A".into(),
-      school: "N/A".into(),
-      instagram_id: "N/A".into(),
-      icon: "N/A".into()
-    }
-  }
-
   pub async fn from_json(json_data: &Value) -> Result<Club> {
     let properties: &Value = &json_data["properties"];
 
@@ -378,29 +338,18 @@ impl Club {
   }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct Event {
   pub id: String,
-  pub date: EventPeriod,
-  pub name: String,
-  pub description: String,
-  pub thumbnail: String,
-  pub principal: Vec<Member>
+  date: EventPeriod,
+  name: String,
+  description: String,
+  thumbnail: String,
+  principal: Vec<Member>
 }
 
 impl Event {
-  pub fn default() -> Event {
-    Event {
-      id: "N/A".into(),
-      date: EventPeriod::default(),
-      name: "N/A".into(),
-      description: "N/A".into(),
-      thumbnail: "N/A".into(),
-      principal: vec![]
-    }
-  }
-  
   pub async fn from_json(json_data: &Value) -> Result<Event> {
     let properties: &Value = &json_data["properties"];
 
@@ -457,31 +406,19 @@ impl Event {
   }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct Article {
   pub id: String,
-  pub title: String,
-  pub content: String,
-  pub description: String,
-  pub tags: Vec<String>,
-  pub created_at: String,
-  pub updated_at: String
+  title: String,
+  content: String,
+  description: String,
+  tags: Vec<String>,
+  created_at: String,
+  updated_at: String
 }
 
 impl Article {
-  pub fn default() -> Article {
-    Article {
-      id: "N/A".into(),
-      title: "N/A".into(),
-      description: "N/A".into(),
-      content: "N/A".into(),
-      tags: vec![],
-      created_at: "N/A".into(),
-      updated_at: "N/A".into(),
-    }
-  }
-  
   pub async fn from_json(json_data: &Value) -> Result<Article> {
     let properties: &Value = &json_data["properties"];
 
@@ -535,27 +472,17 @@ impl Article {
   }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub struct Sponsor {
   pub id: String,
-  pub name: String,
-  pub icon: String,
-  pub url: String,
-  pub description: String
+  name: String,
+  icon: String,
+  url: String,
+  description: String
 }
 
 impl Sponsor {
-  pub fn default() -> Sponsor {
-    Sponsor {
-      id: "N/A".into(),
-      name: "N/A".into(),
-      description: "N/A".into(),
-      icon: "N/A".into(),
-      url: "N/A".into(),
-    }
-  }
-
   pub async fn from_json(json_data: &Value) -> Result<Sponsor> {
     let properties: &Value = &json_data["properties"];
 
