@@ -24,3 +24,5 @@ ENV SPONSOR_DATABASE_ID = your_deploy_id
 COPY --from=builder /scaict-website-api/target/release/scaict-website-api .
 
 CMD ["/scaict-website-api/scaict-website-api"]
+
+EXPOSE 8080
