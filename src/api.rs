@@ -5,6 +5,7 @@ use actix_web::{
   web,
   HttpRequest
 };
+use serde_json::json;
 use tracing::log::debug;
 
 use crate::notion::{
@@ -34,9 +35,10 @@ async fn get_version() -> HttpResponse {
   HttpResponse::Ok()
     .content_type(ContentType::json())
     .json(
-      format!(
-        r#"{{"version": "{api_version}"}}"#,
-        api_version = API_VERSION
+      json!(
+        {
+          "version": API_VERSION
+        }
       )
     )
 }
