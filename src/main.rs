@@ -91,6 +91,7 @@ async fn main() -> std::io::Result<()> {
   HttpServer::new(|| {
     App::new()
       .wrap(middleware::Logger::default())
+      .service(get_version)
       .service(get_members)
       .service(get_member_by_id)
       .service(get_groups)
