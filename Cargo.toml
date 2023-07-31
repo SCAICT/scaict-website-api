@@ -1,5 +1,5 @@
 [package]
-name = "scaict_website_api"
+name = "scaict-website-api"
 version = "0.1.0"
 edition = "2021"
 
