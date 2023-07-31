@@ -28,7 +28,7 @@ mod api;
 
 
 static WORKERS: usize = 8;
-static HTTP_PORT: u16 = 8080;
+static HTTP_PORT: u16 = 443;
 static MAX_CACHE_AGE: Duration = Duration::from_secs(86400);
 
 
