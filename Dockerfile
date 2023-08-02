@@ -27,4 +27,5 @@ COPY --from=builder /scaict-website-api/target/release/scaict-website-api .
 
 CMD ["/scaict-website-api/scaict-website-api"]
 
-EXPOSE 8080
+EXPOSE 80
+EXPOSE 443

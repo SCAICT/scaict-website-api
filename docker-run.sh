@@ -1,6 +1,7 @@
 sudo docker run \
   --name SCAICT-Website-API \
   --detach \
+  --restart unless-stopped \
   --publish 80:80 \
   --publish 443:443 \
   --env-file .env \
