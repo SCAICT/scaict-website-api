@@ -64,11 +64,10 @@ async fn main() {
     .route("/sponsors", get(get_sponsors))
     .route("/sponsors/:id", get(get_sponsor_by_id));
 
-
   let addr: SocketAddr = SocketAddr::from(
     ([0, 0, 0, 0], HTTPS_PORT)
   );
-  
+
   axum_server::bind_rustls(addr, config)
     .serve(app.into_make_service())
     .await
