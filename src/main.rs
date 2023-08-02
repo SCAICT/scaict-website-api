@@ -9,7 +9,12 @@ use axum::{Router, routing::get};
 use axum_server::tls_rustls::RustlsConfig;
 use notion::client::update_all;
 use tokio::time::sleep;
-use tracing::{Level, log::debug};
+use tower_http::trace::{TraceLayer, self};
+use tracing::log::debug;
+use tracing_subscriber::{
+  layer::SubscriberExt,
+  util::SubscriberInitExt
+};
 use dotenv::dotenv;
 
 use crate::api::*;
@@ -25,8 +30,16 @@ static MAX_CACHE_AGE: Duration = Duration::from_secs(86400);
 
 #[tokio::main]
 async fn main() {
-  tracing_subscriber::fmt()
-    .with_max_level(Level::INFO)
+  tracing_subscriber::registry()
+    .with(
+      tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(
+          |_| {
+            "scaict_website_api=info,tower_http=trace,axum::rejection=trace".into()
+          }
+        )
+    )
+    .with(tracing_subscriber::fmt::layer())
     .init();
 
   dotenv().ok();
@@ -62,7 +75,13 @@ async fn main() {
     .route("/articles", get(get_articles))
     .route("/articles/:id", get(get_article_by_id))
     .route("/sponsors", get(get_sponsors))
-    .route("/sponsors/:id", get(get_sponsor_by_id));
+    .route("/sponsors/:id", get(get_sponsor_by_id))
+    .layer(
+      TraceLayer::new_for_http()
+        .on_request(trace::DefaultOnRequest::new())
+        .on_response(trace::DefaultOnResponse::new())
+        .on_failure(trace::DefaultOnFailure::new())
+    );
 
   let addr: SocketAddr = SocketAddr::from(
     ([0, 0, 0, 0], HTTPS_PORT)
