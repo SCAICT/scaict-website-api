@@ -1,20 +1,28 @@
 use axum::{
   extract::Path,
   http::{header, HeaderMap, StatusCode},
-  Json, response::{Response, IntoResponse}
+  Json,
+  response::{Response, IntoResponse}
 };
-use serde_json::{json, Value};
+use serde_json::json;
 use tracing::log::debug;
 
 use crate::notion::{
-  types::{NotionDataType, NotionData},
+  types::NotionDataType,
   cache::CacheStorage,
   client::fetch_data
 };
 
 
 static API_VERSION: &str = "1.0.0";
+static ROBOTS_TXT: &str = r#"
+User-agent: *
 
+Disallow: /members
+Disallow: /groups
+Disallow: /clubs
+Disallow: /sponsors
+"#;
 
 async fn handle_no_cache(
   headers: &HeaderMap,
@@ -33,7 +41,14 @@ async fn handle_no_cache(
   }
 }
 
-pub async fn get_version() -> (StatusCode, Json<Value>) {
+pub async fn get_robots_txt() -> Response {
+  (
+    StatusCode::OK,
+    ROBOTS_TXT
+  ).into_response()
+}
+
+pub async fn get_version() -> Response {
   (
     StatusCode::OK,
     Json(
@@ -41,12 +56,12 @@ pub async fn get_version() -> (StatusCode, Json<Value>) {
         {"version": API_VERSION}
       )
     )
-  )
+  ).into_response()
 }
 
 pub async fn get_members(
   headers: HeaderMap
-) -> (StatusCode, Json<Vec<NotionData>>) {
+) -> Response {
   handle_no_cache(
     &headers,
     &NotionDataType::Member
@@ -59,7 +74,7 @@ pub async fn get_members(
         &NotionDataType::Member
       ).await
     )
-  )
+  ).into_response()
 }
 
 pub async fn get_member_by_id(

@@ -5,7 +5,7 @@ use std::{
   net::SocketAddr
 };
 
-use axum::{Router, routing::get};
+use axum::{Router, routing::get, response::Redirect};
 use axum_server::tls_rustls::RustlsConfig;
 use notion::client::update_all;
 use tokio::time::sleep;
@@ -26,6 +26,7 @@ mod api;
 
 static HTTPS_PORT: u16 = 443;
 static MAX_CACHE_AGE: Duration = Duration::from_secs(86400);
+static GITHUB_REPO_URL: &str = "https://github.com/SCAICT/scaict-website-api";
 
 
 #[tokio::main]
@@ -64,6 +65,8 @@ async fn main() {
 
   let app: Router = Router::new()
     .route("/version", get(get_version))
+    .route("/robots.txt", get(get_robots_txt))
+    .route("/repo", get(|| async { Redirect::permanent(GITHUB_REPO_URL) }))
     .route("/members", get(get_members))
     .route("/members/:id", get(get_member_by_id))
     .route("/groups", get(get_groups))
