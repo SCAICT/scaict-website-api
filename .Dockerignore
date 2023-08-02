@@ -2,3 +2,5 @@
 /target
 *.env
 *.tar
+.DS_Store
+docker-*.sh

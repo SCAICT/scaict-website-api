@@ -11,9 +11,12 @@ codegen-units = 1
 opt-level = "s"
 
 
-[dependencies.actix-web]
-version = "4.3.1"
-features = ["rustls"]
+[dependencies.axum]
+version = "0.6.19"
+
+[dependencies.axum-server]
+version = "0.5.1"
+features = ["tls-rustls"]
 
 [dependencies.anyhow]
 version = "1.0.72"
@@ -26,12 +29,6 @@ version = "0.14.27"
 
 [dependencies.hyper-rustls]
 version = "0.24.1"
-
-[dependencies.rustls]
-version = "0.20.2"
-
-[dependencies.rustls-pemfile]
-version = "1.0.3"
 
 [dependencies.tokio]
 version = "1.29.1"
@@ -52,3 +49,5 @@ version = "1.0.104"
 
 [dependencies.flate2]
 version = "1.0.26"
+default-features = false
+features = ["cloudflare_zlib"]

@@ -1,15 +1,13 @@
-use actix_web::{
-  get,
-  HttpResponse,
-  http::header::{ContentType, self},
-  web,
-  HttpRequest
+use axum::{
+  extract::Path,
+  http::{header, HeaderMap, StatusCode},
+  Json, response::{Response, IntoResponse}
 };
-use serde_json::json;
+use serde_json::{json, Value};
 use tracing::log::debug;
 
 use crate::notion::{
-  types::NotionDataType,
+  types::{NotionDataType, NotionData},
   cache::CacheStorage,
   client::fetch_data
 };
@@ -18,8 +16,13 @@ use crate::notion::{
 static API_VERSION: &str = "1.0.0";
 
 
-async fn handle_no_cache(req: &HttpRequest, data_type: &NotionDataType) {
-  if let Some(cache_control) = req.headers().get(header::CACHE_CONTROL) {
+async fn handle_no_cache(
+  headers: &HeaderMap,
+  data_type: &NotionDataType
+) {
+  if let Some(
+    cache_control
+  ) = headers.get(header::CACHE_CONTROL) {
     if cache_control.to_str().unwrap_or("") == "no-cache" {
       debug!("Receive `no-cache`, cleaning cache...");
       CacheStorage::get().update(
@@ -30,185 +33,248 @@ async fn handle_no_cache(req: &HttpRequest, data_type: &NotionDataType) {
   }
 }
 
-#[get("/version")]
-async fn get_version() -> HttpResponse {
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+pub async fn get_version() -> (StatusCode, Json<Value>) {
+  (
+    StatusCode::OK,
+    Json(
       json!(
-        {
-          "version": API_VERSION
-        }
+        {"version": API_VERSION}
       )
     )
+  )
 }
 
-#[get("/members")]
-async fn get_members(req: HttpRequest) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_members(
+  headers: HeaderMap
+) -> (StatusCode, Json<Vec<NotionData>>) {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Member
+  ).await;
 
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+  (
+    StatusCode::OK,
+    Json(
       CacheStorage::get().request_all(
         &NotionDataType::Member
       ).await
     )
+  )
 }
 
-#[get("/members/{id}")]
-async fn get_member_by_id(req: HttpRequest, id: web::Path<String>) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_member_by_id(
+  headers: HeaderMap,
+  Path(id): Path<String>
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Member
+  ).await;
 
   match CacheStorage::get().request(
     &id.to_string(),
     &NotionDataType::Member
   ).await {
-    Some(data) => {
-      HttpResponse::Ok().content_type(ContentType::json()).json(data)
-    },
-    None => HttpResponse::NotFound().finish()
+    Some(data) => (
+      StatusCode::OK,
+      Json(data)
+    ).into_response(),
+    None => StatusCode::NOT_FOUND.into_response()
   }
 }
 
-#[get("/groups")]
-async fn get_groups(req: HttpRequest) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_groups(
+  headers: HeaderMap
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Group
+  ).await;
 
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+  (
+    StatusCode::OK,
+    Json(
       CacheStorage::get().request_all(
         &NotionDataType::Group
       ).await
     )
+  ).into_response()
 }
 
-#[get("/groups/{id}")]
-async fn get_group_by_id(req: HttpRequest, id: web::Path<String>) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_group_by_id(
+  headers: HeaderMap,
+  Path(id): Path<String>
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Group
+  ).await;
 
   match CacheStorage::get().request(
     &id.to_string(),
     &NotionDataType::Group
   ).await {
-    Some(data) => {
-      HttpResponse::Ok().content_type(ContentType::json()).json(data)
-    },
-    None => HttpResponse::NotFound().finish()
+    Some(data) => (
+      StatusCode::OK,
+      Json(data)
+    ).into_response(),
+    None => StatusCode::NOT_FOUND.into_response()
   }
 }
 
-#[get("/clubs")]
-async fn get_clubs(req: HttpRequest) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_clubs(
+  headers: HeaderMap
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Club
+  ).await;
 
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+  (
+    StatusCode::OK,
+    Json(
       CacheStorage::get().request_all(
         &NotionDataType::Club
       ).await
     )
+  ).into_response()
 }
 
-#[get("/clubs/{id}")]
-async fn get_club_by_id(req: HttpRequest, id: web::Path<String>) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_club_by_id(
+  headers: HeaderMap,
+  Path(id): Path<String>
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Club
+  ).await;
 
   match CacheStorage::get().request(
     &id.to_string(),
     &NotionDataType::Club
   ).await {
-    Some(data) => {
-      HttpResponse::Ok().content_type(ContentType::json()).json(data)
-    },
-    None => HttpResponse::NotFound().finish()
+    Some(data) => (
+      StatusCode::OK,
+      Json(data)
+    ).into_response(),
+    None => StatusCode::NOT_FOUND.into_response()
   }
 }
 
-#[get("/events")]
-async fn get_events(req: HttpRequest) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_events(
+  headers: HeaderMap
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Event
+  ).await;
 
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+  (
+    StatusCode::OK,
+    Json(
       CacheStorage::get().request_all(
         &NotionDataType::Event
       ).await
     )
+  ).into_response()
 }
 
-#[get("/events/{id}")]
-async fn get_event_by_id(req: HttpRequest, id: web::Path<String>) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_event_by_id(
+  headers: HeaderMap,
+  Path(id): Path<String>
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Event
+  ).await;
 
   match CacheStorage::get().request(
     &id.to_string(),
     &NotionDataType::Event
   ).await {
-    Some(data) => {
-      HttpResponse::Ok().content_type(ContentType::json()).json(data)
-    },
-    None => HttpResponse::NotFound().finish()
+    Some(data) => (
+      StatusCode::OK,
+      Json(data)
+    ).into_response(),
+    None => StatusCode::NOT_FOUND.into_response()
   }
 }
 
 
-#[get("/articles")]
-async fn get_articles(req: HttpRequest) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_articles(
+  headers: HeaderMap
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Article
+  ).await;
 
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+  (
+    StatusCode::OK,
+    Json(
       CacheStorage::get().request_all(
         &NotionDataType::Article
       ).await
     )
+  ).into_response()
 }
 
-#[get("/articles/{id}")]
-async fn get_article_by_id(req: HttpRequest, id: web::Path<String>) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_article_by_id(
+  headers: HeaderMap,
+  Path(id): Path<String>
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Article
+  ).await;
 
   match CacheStorage::get().request(
     &id.to_string(),
     &NotionDataType::Article
   ).await {
-    Some(data) => {
-      HttpResponse::Ok().content_type(ContentType::json()).json(data)
-    },
-    None => HttpResponse::NotFound().finish()
+    Some(data) => (
+      StatusCode::OK,
+      Json(data)
+    ).into_response(),
+    None => StatusCode::NOT_FOUND.into_response()
   }
 }
 
+pub async fn get_sponsors(
+  headers: HeaderMap
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Sponsor
+  ).await;
 
-#[get("/sponsors")]
-async fn get_sponsors(req: HttpRequest) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
-
-  HttpResponse::Ok()
-    .content_type(ContentType::json())
-    .json(
+  (
+    StatusCode::OK,
+    Json(
       CacheStorage::get().request_all(
         &NotionDataType::Sponsor
       ).await
     )
+  ).into_response()
 }
 
-#[get("/sponsors/{id}")]
-async fn get_sponsor_by_id(req: HttpRequest, id: web::Path<String>) -> HttpResponse {
-  handle_no_cache(&req, &NotionDataType::Member).await;
+pub async fn get_sponsor_by_id(
+  headers: HeaderMap,
+  Path(id): Path<String>
+) -> Response {
+  handle_no_cache(
+    &headers,
+    &NotionDataType::Sponsor
+  ).await;
 
   match CacheStorage::get().request(
     &id.to_string(),
     &NotionDataType::Sponsor
   ).await {
-    Some(data) => {
-      HttpResponse::Ok().content_type(ContentType::json()).json(data)
-    },
-    None => HttpResponse::NotFound().finish()
+    Some(data) => (
+      StatusCode::OK,
+      Json(data)
+    ).into_response(),
+    None => StatusCode::NOT_FOUND.into_response()
   }
 }
