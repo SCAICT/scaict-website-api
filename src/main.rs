@@ -9,7 +9,7 @@ use axum::{Router, routing::get, response::Redirect};
 use axum_server::tls_rustls::RustlsConfig;
 use notion::client::update_all;
 use tokio::time::sleep;
-use tower_http::trace::{TraceLayer, self};
+use tower_http::{trace::{TraceLayer, self}, cors::CorsLayer};
 use tracing::log::debug;
 use tracing_subscriber::{
   layer::SubscriberExt,
@@ -79,6 +79,7 @@ async fn main() {
     .route("/articles/:id", get(get_article_by_id))
     .route("/sponsors", get(get_sponsors))
     .route("/sponsors/:id", get(get_sponsor_by_id))
+    .layer(CorsLayer::permissive())
     .layer(
       TraceLayer::new_for_http()
         .on_request(trace::DefaultOnRequest::new())
